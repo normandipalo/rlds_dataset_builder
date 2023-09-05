@@ -25,4 +25,7 @@ Here's a one line description of each task:
 Here are a few example GIFs: the arrow indicates the x and y components of the action, with a red arrow indicating a closed end-effector and the blue arrow an open end-effector. The red arc indicates the amount of rotation around the z-axis, although all three axes of rotations are recorded.
 
 ![](https://github.com/normandipalo/rlds_dataset_builder/blob/main/imperial_wrist_dataset/gifs/insert_toast.gif)
-
+![](https://github.com/normandipalo/rlds_dataset_builder/blob/main/imperial_wrist_dataset/gifs/insert_cap_in_bottle.gif)
+![](https://github.com/normandipalo/rlds_dataset_builder/blob/main/imperial_wrist_dataset/gifs/pick_up_bottle.gif)
+![](https://github.com/normandipalo/rlds_dataset_builder/blob/main/imperial_wrist_dataset/gifs/pick_up_mug.gif)
+![](https://github.com/normandipalo/rlds_dataset_builder/blob/main/imperial_wrist_dataset/gifs/stack_bowls.gif)
