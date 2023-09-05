@@ -5,9 +5,10 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import tensorflow_hub as hub
+import mediapy as media
 
 
-class ExampleDataset(tfds.core.GeneratorBasedBuilder):
+class ImperialWristDataset(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for example dataset."""
 
     VERSION = tfds.core.Version('1.0.0')
@@ -29,26 +30,26 @@ class ExampleDataset(tfds.core.GeneratorBasedBuilder):
                             shape=(64, 64, 3),
                             dtype=np.uint8,
                             encoding_format='png',
-                            doc='Main camera RGB observation.',
+                            doc='Main camera RGB observation (same as wrist in our case).',
                         ),
-                        'wrist_image': tfds.features.Image(
+
+                         'wrist_image': tfds.features.Image(
                             shape=(64, 64, 3),
                             dtype=np.uint8,
                             encoding_format='png',
                             doc='Wrist camera RGB observation.',
-                        ),
-                        'state': tfds.features.Tensor(
-                            shape=(10,),
+                         ),
+                         'state': tfds.features.Tensor(
+                            shape=(1,),
                             dtype=np.float32,
-                            doc='Robot state, consists of [7x robot joint angles, '
-                                '2x gripper position, 1x door opening angle].',
-                        )
+                            doc='Gripper state (opened or closed)',
+                        ),
+
                     }),
                     'action': tfds.features.Tensor(
-                        shape=(10,),
+                        shape=(8,),
                         dtype=np.float32,
-                        doc='Robot action, consists of [7x joint velocities, '
-                            '2x gripper velocities, 1x terminate episode].',
+                        doc='Robot action, consists of 3x delta position in EEF frame, 3x delta ZYX euler angles, 1x gripper open/close, 1x terminate episode.',
                     ),
                     'discount': tfds.features.Scalar(
                         dtype=np.float32,
@@ -90,36 +91,38 @@ class ExampleDataset(tfds.core.GeneratorBasedBuilder):
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Define data splits."""
         return {
-            'train': self._generate_examples(path='data/train/episode_*.npy'),
-            'val': self._generate_examples(path='data/val/episode_*.npy'),
+            'train': self._generate_examples(path='/home/norman/Downloads/bc'),
         }
 
     def _generate_examples(self, path) -> Iterator[Tuple[str, Any]]:
         """Generator of examples for each split."""
 
-        def _parse_example(episode_path):
+        def _parse_example(episode_path, id):
+            print(episode_path, id)
             # load raw data --> this should change for your dataset
-            data = np.load(episode_path, allow_pickle=True)     # this is a list of dicts in our case
-
+            obs = np.load(episode_path + f"/observations_{id}.npy", allow_pickle=True)     # this is a list of dicts in our case
+            acts = np.load(episode_path + f"/actions_{id}.npy", allow_pickle=True) 
             # assemble episode --> here we're assuming demos so we set reward to 1 at the end
             episode = []
-            for i, step in enumerate(data):
+            language_instruction = episode_path.split("/")[-1][:-1].replace("_", " ")
+            for i, step in enumerate(obs):
                 # compute Kona language embedding
-                language_embedding = self._embed([step['language_instruction']])[0].numpy()
+                language_embedding = self._embed([language_instruction])[0].numpy()
 
                 episode.append({
                     'observation': {
-                        'image': step['image'],
-                        'wrist_image': step['wrist_image'],
-                        'state': step['state'],
+                        'image': media.resize_image(obs[i], (64,64)),
+                        'wrist_image': media.resize_image(obs[i],(64,64)),
+                        'state': [acts[i,-2]],
+                        
                     },
-                    'action': step['action'],
+                    'action': acts[i],
                     'discount': 1.0,
-                    'reward': float(i == (len(data) - 1)),
+                    'reward': float(i == (len(obs) - 1)),
                     'is_first': i == 0,
-                    'is_last': i == (len(data) - 1),
-                    'is_terminal': i == (len(data) - 1),
-                    'language_instruction': step['language_instruction'],
+                    'is_last': i == (len(obs) - 1),
+                    'is_terminal': i == (len(obs) - 1),
+                    'language_instruction': language_instruction,
                     'language_embedding': language_embedding,
                 })
 
@@ -132,14 +135,15 @@ class ExampleDataset(tfds.core.GeneratorBasedBuilder):
             }
 
             # if you want to skip an example for whatever reason, simply return None
-            return episode_path, sample
+            return episode_path + f"_id_{id}", sample
 
         # create list of all examples
-        episode_paths = glob.glob(path)
+        episode_folders = glob.glob(path + "/*2")
 
         # for smallish datasets, use single-thread parsing
-        for sample in episode_paths:
-            yield _parse_example(sample)
+        for sample in episode_folders:
+            for i in range(10):
+                yield _parse_example(sample, i)
 
         # for large datasets use beam to parallelize data parsing (this will have initialization overhead)
         # beam = tfds.core.lazy_imports.apache_beam
