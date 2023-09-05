@@ -113,7 +113,7 @@ class ImperialWristDataset(tfds.core.GeneratorBasedBuilder):
                     'observation': {
                         'image': media.resize_image(obs[i], (64,64)),
                         'wrist_image': media.resize_image(obs[i],(64,64)),
-                        'state': [acts[i,-2]],
+                        'state': [acts[np.min([0,i-1]),-2]],
                         
                     },
                     'action': acts[i],
