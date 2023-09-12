@@ -1,6 +1,8 @@
 ## Dataset and Setup Information
 We use a Sawyer robot with a Robotiq 2F-85 gripper. We use a RealSense D435 camera mounted on the wrist. In particular, if we consider an x-axis pointing "forward" or in front of the robot, a y-axis pointing to the left, and a z-axis pointing up, following the right-hand convention, with this reference frame having the origin on the tip of the end-effector, the camera is mounted at (7cm, 0cm, 18cm) - i.e. 18cm "up" and 7cm "forward" of the end-effector tip. The camera is parallel to the z-axis, looking straight down.
 
+Here's a public Google Drive [link to the dataset](https://drive.google.com/file/d/1qj27eYR5Ox8pllw1JRcfHuZvBqOOAdon/view?usp=sharing).
+
 Here's a one line description of each task:
 
 1. **grasp can**: grasp a can places horizontally on a table and lift it.
